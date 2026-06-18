@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "ProteinMate",
+    "slug": "proteinmate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "proteinmate",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.proteinmate.app"
+    },
+    "android": {
+      "package": "com.proteinmate.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#f7f3ea"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
