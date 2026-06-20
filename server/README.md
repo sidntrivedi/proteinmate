@@ -29,8 +29,9 @@ When testing on a physical device, point the app at your machine's LAN IP (for e
 | --- | --- | --- |
 | `PORT` | `8787` | Port to listen on. |
 | `STT_PROVIDER` | `openai` | `openai` or `deepgram`. |
-| `OPENAI_API_KEY` | - | Required when provider is `openai`. |
+| `OPENAI_API_KEY` | - | Required when provider is `openai` and for `/vision` photo logging. |
 | `OPENAI_STT_MODEL` | `gpt-4o-mini-transcribe` | OpenAI transcription model. |
+| `OPENAI_VISION_MODEL` | `gpt-4o-mini` | OpenAI vision model used by `/vision` to read protein off a label. |
 | `DEEPGRAM_API_KEY` | - | Required when provider is `deepgram`. |
 | `DEEPGRAM_MODEL` | `nova-3` | Deepgram model. |
 | `OLLAMA_API_KEY` | - | Required for `/parse`. Create one at ollama.com/settings/keys. |
@@ -49,11 +50,16 @@ OPENAI_API_KEY=sk-...
 OLLAMA_API_KEY=...
 ```
 
+## Photo label logging
+
+`POST /vision` sends a product/label photo to an OpenAI vision model and returns the protein read straight off the pack, normalized to grams of protein per 100 g (per-serving values are converted). The app asks how many grams were eaten (defaulting to the net pack weight when printed) and logs the total directly (no food-DB lookup, protein comes from the label).
+
 ## Endpoints
 
-- `GET /health` -> `{ ok: true, provider, parseModel }`
+- `GET /health` -> `{ ok: true, provider, parseModel, visionModel }`
 - `POST /transcribe` -> multipart form with an `audio` file field, returns `{ text }`.
 - `POST /parse` -> JSON body `{ transcript }`, returns `{ items: [{ name, quantity, unit }] }`.
+- `POST /vision` -> multipart form with an `image` file field, returns `{ items: [{ name, proteinPer100g, netWeightGrams, confidence }] }`. Protein is normalized to per 100 g; the app asks how many grams were eaten and computes the total.
 
 ## Notes
 

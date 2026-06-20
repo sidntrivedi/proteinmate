@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 
 import { FOOD_DB, MEALS, QUICK_PRESETS } from '../../domain/foods';
 import { proteinFor } from '../../domain/nutrition';
+import { toLogEntry, type PhotoLogItem } from '../../domain/photoLogging';
 import { searchFoods } from '../../domain/search';
 import { nextStreak, todayKey } from '../../domain/streaks';
 import type { Food, FoodLog, MealName, Serving, StreakState } from '../../domain/types';
@@ -89,6 +90,30 @@ export function useProteinTracker() {
     setQuery('');
   };
 
+  // Logs items whose protein is read straight off a label/photo. Protein is
+  // explicit (not derived from the food DB), and nothing is added to customFoods.
+  const addPhotoLogs = (items: PhotoLogItem[]) => {
+    if (items.length === 0) {
+      return;
+    }
+
+    const entries: FoodLog[] = items.map((item, index) => {
+      const entry = toLogEntry(item);
+      return {
+        id: `${Date.now()}-${index}-photo`,
+        foodId: `photo-${Date.now()}-${index}`,
+        foodName: entry.name,
+        quantityGrams: entry.quantityGrams,
+        servingLabel: entry.servingLabel,
+        protein: entry.protein,
+        meal,
+        createdAt: new Date().toISOString()
+      };
+    });
+
+    setLogs((current) => [...entries, ...current]);
+  };
+
   const repeatYesterday = () => {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const yesterdayLogs = logs.filter((log) => log.createdAt.slice(0, 10) === yesterday);
@@ -141,6 +166,7 @@ export function useProteinTracker() {
   return {
     addLog,
     addLogs,
+    addPhotoLogs,
     allFoods,
     consumed,
     customName,

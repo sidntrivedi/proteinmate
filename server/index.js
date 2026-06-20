@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 8787;
 const PROVIDER = process.env.STT_PROVIDER || 'openai';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_STT_MODEL || 'gpt-4o-mini-transcribe';
+const OPENAI_VISION_MODEL = process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini';
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
 const DEEPGRAM_MODEL = process.env.DEEPGRAM_MODEL || 'nova-3';
 
@@ -23,7 +24,7 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, provider: PROVIDER, parseModel: OLLAMA_MODEL });
+  res.json({ ok: true, provider: PROVIDER, parseModel: OLLAMA_MODEL, visionModel: OPENAI_VISION_MODEL });
 });
 
 async function transcribeWithOpenAI(file) {
@@ -172,6 +173,92 @@ app.post('/parse', async (req, res) => {
   } catch (error) {
     console.error('Parse error:', error);
     res.status(502).json({ error: 'Parsing failed.' });
+  }
+});
+
+const VISION_SYSTEM_PROMPT = [
+  'You read protein off a packaged food photo and express it as protein per 100 g (or per 100 ml) of the product.',
+  'Return ONLY JSON matching: {"items":[{"name":string,"proteinPer100g":number,"netWeightGrams":number|null,"confidence":"high"|"medium"|"low"}]}.',
+  'name: the product in lowercase romanized Latin script (never Devanagari).',
+  'proteinPer100g: grams of protein per 100 g of the product. If the label gives "per 100 g" directly, use it. If it gives protein only per serving, convert it: proteinPer100g = proteinPerServing / servingGrams * 100. Treat per-100-ml as per-100-g.',
+  'netWeightGrams: the net weight of the whole pack in grams if printed (so the app can default to the whole item), else null.',
+  'Only use numbers actually printed on the label. Never guess or hallucinate. If protein per 100 g cannot be read or derived, return {"items":[]}.',
+  'Report protein only. Do not output calories, carbs, fat, or any other nutrient. Output no prose, only the JSON object.'
+].join(' ');
+
+function toNullableNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function normalizeVisionItems(parsed) {
+  if (!parsed || !Array.isArray(parsed.items)) {
+    return [];
+  }
+
+  return parsed.items
+    .filter(
+      (item) => item && typeof item.name === 'string' && item.name.trim() && toNullableNumber(item.proteinPer100g)
+    )
+    .map((item) => ({
+      name: item.name.trim(),
+      proteinPer100g: item.proteinPer100g,
+      netWeightGrams: toNullableNumber(item.netWeightGrams),
+      confidence: ['high', 'medium', 'low'].includes(item.confidence) ? item.confidence : 'medium'
+    }));
+}
+
+async function analyzeLabelWithOpenAI(file) {
+  if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not set');
+  }
+
+  const mime = file.mimetype || 'image/jpeg';
+  const dataUrl = `data:${mime};base64,${file.buffer.toString('base64')}`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: OPENAI_VISION_MODEL,
+      temperature: 0,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: VISION_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Read the protein content from this product photo.' },
+            { type: 'image_url', image_url: { url: dataUrl } }
+          ]
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI vision failed (${response.status}): ${await response.text()}`);
+  }
+
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content ?? '';
+  return normalizeVisionItems(extractJsonObject(content));
+}
+
+app.post('/vision', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: 'Missing image file field "image".' });
+    return;
+  }
+
+  try {
+    const items = await analyzeLabelWithOpenAI(req.file);
+    res.json({ items });
+  } catch (error) {
+    console.error('Vision error:', error);
+    res.status(502).json({ error: 'Label reading failed.' });
   }
 });
 

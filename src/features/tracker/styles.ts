@@ -109,6 +109,7 @@ export const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12
   },
   primaryAction: {
@@ -538,5 +539,88 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 10
+  },
+  photoActionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 18
+  },
+  photoCaptureButton: {
+    alignItems: 'center',
+    backgroundColor: '#16302b',
+    borderRadius: 18,
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 16
+  },
+  photoCaptureButtonSecondary: {
+    backgroundColor: '#ffffff',
+    borderColor: '#ded4c1',
+    borderWidth: 1
+  },
+  photoCaptureText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '900'
+  },
+  photoCaptureTextSecondary: {
+    color: '#16302b'
+  },
+  photoBasis: {
+    color: '#61746b',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 2
+  },
+  photoGramsPrompt: {
+    color: '#61746b',
+    fontSize: 14,
+    fontWeight: '800'
+  },
+  photoGramsInput: {
+    backgroundColor: '#ffffff',
+    borderColor: '#dcd3c1',
+    borderRadius: 12,
+    borderWidth: 1,
+    color: '#142b27',
+    fontSize: 16,
+    fontWeight: '900',
+    minWidth: 64,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    textAlign: 'center'
+  },
+  photoItem: {
+    backgroundColor: '#fffaf0',
+    borderColor: '#e4dac8',
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 12,
+    marginTop: 10,
+    padding: 14
+  },
+  photoItemTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  photoItemControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  photoWholePack: {
+    backgroundColor: '#eef1ea',
+    borderRadius: 99,
+    paddingHorizontal: 14,
+    paddingVertical: 7
+  },
+  photoWholePackText: {
+    color: '#16302b',
+    fontSize: 13,
+    fontWeight: '900'
   }
 });

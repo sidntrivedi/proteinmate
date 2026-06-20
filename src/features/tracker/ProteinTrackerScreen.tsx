@@ -6,6 +6,7 @@ import ViewShot, { captureRef } from 'react-native-view-shot';
 import { AppHeader } from './components/AppHeader';
 import { CustomFoodModal } from './components/CustomFoodModal';
 import { FoodSearchSection } from './components/FoodSearchSection';
+import { PhotoLogModal } from './components/PhotoLogModal';
 import { ProgressHero } from './components/ProgressHero';
 import { ServingModal } from './components/ServingModal';
 import { ShareCard } from './components/ShareCard';
@@ -13,13 +14,16 @@ import { TodayLogSection } from './components/TodayLogSection';
 import { TrackerActions } from './components/TrackerActions';
 import { VoiceLogModal } from './components/VoiceLogModal';
 import { styles } from './styles';
+import { usePhotoLogging } from './usePhotoLogging';
 import { useProteinTracker } from './useProteinTracker';
 import { useVoiceLogging } from './useVoiceLogging';
 
 export function ProteinTrackerScreen() {
   const tracker = useProteinTracker();
   const voice = useVoiceLogging(tracker.allFoods);
+  const photo = usePhotoLogging();
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
   const shareRef = useRef<ViewShot>(null);
 
   const openVoiceLog = () => {
@@ -35,6 +39,21 @@ export function ProteinTrackerScreen() {
   const confirmVoiceLog = () => {
     tracker.addLogs(voice.items.map((item) => ({ food: item.food, serving: item.serving })));
     closeVoiceLog();
+  };
+
+  const openPhotoLog = () => {
+    photo.reset();
+    setPhotoOpen(true);
+  };
+
+  const closePhotoLog = () => {
+    setPhotoOpen(false);
+    photo.reset();
+  };
+
+  const confirmPhotoLog = () => {
+    tracker.addPhotoLogs(photo.items);
+    closePhotoLog();
   };
 
   const shareProgress = async () => {
@@ -77,6 +96,7 @@ export function ProteinTrackerScreen() {
             onRepeatYesterday={tracker.repeatYesterday}
             onShareProgress={shareProgress}
             onVoiceLog={openVoiceLog}
+            onPhotoLog={openPhotoLog}
           />
           <FoodSearchSection
             meal={tracker.meal}
@@ -127,6 +147,17 @@ export function ProteinTrackerScreen() {
         onRemoveItem={voice.removeItem}
         onConfirm={confirmVoiceLog}
         onClose={closeVoiceLog}
+      />
+      <PhotoLogModal
+        isOpen={photoOpen}
+        status={photo.status}
+        items={photo.items}
+        error={photo.error}
+        onCapture={photo.capture}
+        onSetGrams={photo.setGrams}
+        onRemoveItem={photo.removeItem}
+        onConfirm={confirmPhotoLog}
+        onClose={closePhotoLog}
       />
     </SafeAreaView>
   );

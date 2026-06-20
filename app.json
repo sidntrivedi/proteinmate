@@ -13,7 +13,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.proteinmate.app",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "ProteinMate uses the microphone so you can log meals by voice."
+        "NSMicrophoneUsageDescription": "ProteinMate uses the microphone so you can log meals by voice.",
+        "NSCameraUsageDescription": "ProteinMate uses the camera so you can log protein by photographing a product label.",
+        "NSPhotoLibraryUsageDescription": "ProteinMate reads a product label photo you choose to log its protein."
       }
     },
     "android": {
@@ -22,7 +24,8 @@
         "backgroundColor": "#f7f3ea"
       },
       "permissions": [
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "CAMERA"
       ]
     },
     "web": {
@@ -33,6 +36,13 @@
         "expo-audio",
         {
           "microphonePermission": "ProteinMate uses the microphone so you can log meals by voice."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "ProteinMate uses the camera so you can log protein by photographing a product label.",
+          "photosPermission": "ProteinMate reads a product label photo you choose to log its protein."
         }
       ]
     ],
