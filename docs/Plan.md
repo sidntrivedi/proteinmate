@@ -35,24 +35,31 @@ flowchart LR
   voice["Voice note"] --> stt["/transcribe (STT)"]
   stt --> parse["/parse (LLM)"]
   text["Manual search"] --> items["ExtractedItem[]"]
-  photo["Photo (planned)"] --> vision["/vision (planned)"]
   parse --> items
-  vision --> items
   items --> mapper["mapExtractedItems + food DB"]
   mapper --> review["Review modal"]
+  label["Label photo (planned)"] --> vision["/vision: read protein + net weight"]
+  vision --> confirm["Confirm amount consumed"]
+  confirm --> review
   review --> log["addLogs -> protein total"]
 ```
 
-This is the key extension seam: new input methods (photo, etc.) only need to emit `ExtractedItem[]`.
+Two kinds of input:
+
+- **DB-matched** (voice, manual search): emit `ExtractedItem[]`, matched against the food DB, protein computed from `proteinPer100g`.
+- **Label-sourced** (label photo): protein is read directly from the printed nutrition facts, so it bypasses the food DB entirely and is logged as a one-off entry.
 
 ## Phased roadmap
 
 Effort is rough: S (hours), M (a session or two), L (multi-session).
 
-### Phase 1 — Multimodal logging & retention
+### Phase 1 — Label logging & retention
 
-- **Photo-based logging (NEXT UP)** — add a `/vision` proxy endpoint that sends an image to **OpenAI `gpt-4o-mini`** (decided) and returns the same `{ items: [{ name, quantity, unit }] }` JSON. Add `expo-image-picker` / camera and a "Log by photo" button. Reuses `mapExtractedItems`, the review modal, and `addLogs` unchanged.
-  - Effort: M. Risk: estimating portion size from a photo is hard — the existing human-review step is what makes it usable; frame it as a best-guess list you confirm.
+- **Label photo protein logging (NEXT UP)** — photograph a packaged product's nutrition label / back. A new `/vision` proxy endpoint sends the image to **OpenAI `gpt-4o-mini`**, which reads the printed text and returns structured protein info: product name, protein per 100 g (and/or per serving), and net weight / serving size when printed. The user confirms the **amount consumed** (default: the whole package, derived from net weight), and the app logs that protein directly.
+  - Protein comes from the **label, not the food DB**, so this is a one-off log entry and does **not** add to or modify the DB.
+  - Why this replaces plate-photo logging: reading printed nutrition facts is far more accurate than estimating protein from a photo of a meal.
+  - Add `expo-image-picker` / camera and a "Log from label" action.
+  - Effort: M.
 - **Protein reminders / nudges** — local notifications via `expo-notifications` (e.g. "40 g to go today"). No backend, no bot.
   - Effort: S.
 - **Protein history & charts** — trends over time from `logs` in [src/storage/proteinMateStorage.ts](../src/storage/proteinMateStorage.ts): daily protein, goal-hit rate, weekly averages.
@@ -62,11 +69,8 @@ Effort is rough: S (hours), M (a session or two), L (multi-session).
 
 - **Edit-after-log and one-tap re-log** — fix a logged serving; quickly repeat a common item.
   - Effort: S.
-- **Expand the protein food DB** — more foods, more aliases, and better `proteinPer100g` accuracy in [src/domain/foods.ts](../src/domain/foods.ts). Directly improves match rate for voice/photo.
+- **Expand the protein food DB** — more foods, more aliases, and better `proteinPer100g` accuracy in [src/domain/foods.ts](../src/domain/foods.ts). Directly improves match rate for voice/manual logging.
   - Effort: M.
-- **Barcode scanning (protein-only)** — look up packaged foods (e.g. Open Food Facts) and ingest **only** protein-per-100g into the existing `Food` / `Serving` shape. No other nutrients stored. Scanned products **auto-save** into a local cache as a new `source: 'barcode'`, keyed by the barcode, so repeat scans resolve instantly and offline and become searchable — kept separate from the curated `FOOD_DB` seed. The review modal still confirms before logging.
-  - Open decision (defer until we build this): which persistence layer backs the barcode cache (extend the existing AsyncStorage state in [src/storage/proteinMateStorage.ts](../src/storage/proteinMateStorage.ts) vs a dedicated store).
-  - Effort: M-L.
 - **Onboarding + protein-goal calculator** — bodyweight-based daily protein target that sets `goal` in [src/storage/proteinMateStorage.ts](../src/storage/proteinMateStorage.ts).
   - Effort: S-M.
 
@@ -87,11 +91,12 @@ Effort is rough: S (hours), M (a session or two), L (multi-session).
 
 ## Decisions
 
-- **Vision model:** OpenAI `gpt-4o-mini` for photo logging.
-- **Build order:** photo logging first; barcode scanning as a follow-up.
-- **Barcode persistence:** scanned products auto-save into a local, searchable cache (new `source: 'barcode'`), separate from the curated seed.
+- **Dropped plate/food photo logging** — estimating protein from a photo of a meal is too inaccurate.
+- **Label photo logging is the next build** — read protein from a product's printed nutrition label via OpenAI `gpt-4o-mini`.
+- **No automatic DB updates** — label logging produces a one-off entry. The food DB is only ever updated **manually by the user, by typing** (custom foods). No Open Food Facts / barcode-number lookup and no auto-cache for now.
 
 ## Open questions
 
-- Acceptable protein-estimate accuracy from photos, and how to set user expectations in the UI.
-- Persistence layer for the barcode food cache (extend AsyncStorage state vs a dedicated store) — to be decided before building barcode.
+- `/vision` shape: a single multimodal call (image in, structured protein JSON out) vs an explicit two-stage flow (OCR the label, then a text LLM extracts protein). Single call is simpler/cheaper; revisit if accuracy is poor.
+- Amount consumed: default to the net weight printed on the label with user override — but how to handle products where weight or per-100g protein is not clearly printed (e.g. only per-serving values).
+- How to set user expectations when the label is blurry or partially readable.
