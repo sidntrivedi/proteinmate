@@ -51,7 +51,7 @@ Effort is rough: S (hours), M (a session or two), L (multi-session).
 
 ### Phase 1 — Multimodal logging & retention
 
-- **Photo-based logging** — add a `/vision` proxy endpoint that sends an image to a multimodal LLM and returns the same `{ items: [{ name, quantity, unit }] }` JSON. Add `expo-image-picker` / camera and a "Log by photo" button. Reuses `mapExtractedItems`, the review modal, and `addLogs` unchanged.
+- **Photo-based logging (NEXT UP)** — add a `/vision` proxy endpoint that sends an image to **OpenAI `gpt-4o-mini`** (decided) and returns the same `{ items: [{ name, quantity, unit }] }` JSON. Add `expo-image-picker` / camera and a "Log by photo" button. Reuses `mapExtractedItems`, the review modal, and `addLogs` unchanged.
   - Effort: M. Risk: estimating portion size from a photo is hard — the existing human-review step is what makes it usable; frame it as a best-guess list you confirm.
 - **Protein reminders / nudges** — local notifications via `expo-notifications` (e.g. "40 g to go today"). No backend, no bot.
   - Effort: S.
@@ -64,7 +64,8 @@ Effort is rough: S (hours), M (a session or two), L (multi-session).
   - Effort: S.
 - **Expand the protein food DB** — more foods, more aliases, and better `proteinPer100g` accuracy in [src/domain/foods.ts](../src/domain/foods.ts). Directly improves match rate for voice/photo.
   - Effort: M.
-- **Barcode scanning (protein-only)** — look up packaged foods (e.g. Open Food Facts) and ingest **only** protein-per-100g into the existing `Food` / `Serving` shape. No other nutrients stored.
+- **Barcode scanning (protein-only)** — look up packaged foods (e.g. Open Food Facts) and ingest **only** protein-per-100g into the existing `Food` / `Serving` shape. No other nutrients stored. Scanned products **auto-save** into a local cache as a new `source: 'barcode'`, keyed by the barcode, so repeat scans resolve instantly and offline and become searchable — kept separate from the curated `FOOD_DB` seed. The review modal still confirms before logging.
+  - Open decision (defer until we build this): which persistence layer backs the barcode cache (extend the existing AsyncStorage state in [src/storage/proteinMateStorage.ts](../src/storage/proteinMateStorage.ts) vs a dedicated store).
   - Effort: M-L.
 - **Onboarding + protein-goal calculator** — bodyweight-based daily protein target that sets `goal` in [src/storage/proteinMateStorage.ts](../src/storage/proteinMateStorage.ts).
   - Effort: S-M.
@@ -84,7 +85,13 @@ Effort is rough: S (hours), M (a session or two), L (multi-session).
 - **Cost** — STT/vision are billed per call; the single-metric protein focus keeps prompts and responses small and cheap.
 - **Privacy & secrets** — all provider keys stay server-side in the proxy; the app never ships a key. `.env` is gitignored; only `server/.env.example` is tracked.
 
+## Decisions
+
+- **Vision model:** OpenAI `gpt-4o-mini` for photo logging.
+- **Build order:** photo logging first; barcode scanning as a follow-up.
+- **Barcode persistence:** scanned products auto-save into a local, searchable cache (new `source: 'barcode'`), separate from the curated seed.
+
 ## Open questions
 
-- Vision model choice for photo logging (OpenAI `gpt-4o-mini` vs an Ollama vision model) and acceptable protein-estimate accuracy.
-- How aggressively to grow the hand-curated protein food DB vs leaning on barcode lookups.
+- Acceptable protein-estimate accuracy from photos, and how to set user expectations in the UI.
+- Persistence layer for the barcode food cache (extend AsyncStorage state vs a dedicated store) — to be decided before building barcode.
