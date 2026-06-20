@@ -60,18 +60,31 @@ export function useProteinTracker() {
     saveProteinMateState({ goal, logs, customFoods, streak }).catch(() => undefined);
   }, [customFoods, goal, hasLoaded, logs, streak]);
 
+  const buildEntry = (foodItem: Food, serving: Serving, index = 0): FoodLog => ({
+    id: `${Date.now()}-${index}-${foodItem.id}`,
+    foodId: foodItem.id,
+    foodName: foodItem.name,
+    quantityGrams: serving.grams,
+    servingLabel: serving.label,
+    protein: proteinFor(foodItem, serving.grams),
+    meal,
+    createdAt: new Date().toISOString()
+  });
+
   const addLog = (foodItem: Food, serving: Serving = foodItem.defaultServing) => {
-    const entry: FoodLog = {
-      id: `${Date.now()}-${foodItem.id}`,
-      foodId: foodItem.id,
-      foodName: foodItem.name,
-      quantityGrams: serving.grams,
-      servingLabel: serving.label,
-      protein: proteinFor(foodItem, serving.grams),
-      meal,
-      createdAt: new Date().toISOString()
-    };
+    const entry = buildEntry(foodItem, serving);
     setLogs((current) => [entry, ...current]);
+    setSelectedFood(null);
+    setQuery('');
+  };
+
+  const addLogs = (items: { food: Food; serving: Serving }[]) => {
+    if (items.length === 0) {
+      return;
+    }
+
+    const entries = items.map((item, index) => buildEntry(item.food, item.serving, index));
+    setLogs((current) => [...entries, ...current]);
     setSelectedFood(null);
     setQuery('');
   };
@@ -127,6 +140,8 @@ export function useProteinTracker() {
 
   return {
     addLog,
+    addLogs,
+    allFoods,
     consumed,
     customName,
     customOpen,

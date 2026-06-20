@@ -5,15 +5,18 @@
   "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "server": "node server/index.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~54.0.35",
+    "expo-audio": "~1.1.1",
+    "expo-constants": "~18.0.13",
     "expo-linear-gradient": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "lucide-react-native": "^1.21.0",

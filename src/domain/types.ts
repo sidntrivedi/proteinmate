@@ -45,3 +45,9 @@ export type ProteinMateState = {
   customFoods: Food[];
   streak: StreakState;
 };
+
+export type ExtractedItem = {
+  name: string;
+  quantity?: number;
+  unit?: string;
+};

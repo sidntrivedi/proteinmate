@@ -1,5 +1,5 @@
 import * as Sharing from 'expo-sharing';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, Share, StatusBar } from 'react-native';
 import ViewShot, { captureRef } from 'react-native-view-shot';
 
@@ -11,12 +11,31 @@ import { ServingModal } from './components/ServingModal';
 import { ShareCard } from './components/ShareCard';
 import { TodayLogSection } from './components/TodayLogSection';
 import { TrackerActions } from './components/TrackerActions';
+import { VoiceLogModal } from './components/VoiceLogModal';
 import { styles } from './styles';
 import { useProteinTracker } from './useProteinTracker';
+import { useVoiceLogging } from './useVoiceLogging';
 
 export function ProteinTrackerScreen() {
   const tracker = useProteinTracker();
+  const voice = useVoiceLogging(tracker.allFoods);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const shareRef = useRef<ViewShot>(null);
+
+  const openVoiceLog = () => {
+    voice.reset();
+    setVoiceOpen(true);
+  };
+
+  const closeVoiceLog = () => {
+    setVoiceOpen(false);
+    voice.reset();
+  };
+
+  const confirmVoiceLog = () => {
+    tracker.addLogs(voice.items.map((item) => ({ food: item.food, serving: item.serving })));
+    closeVoiceLog();
+  };
 
   const shareProgress = async () => {
     const message = `ProteinMate check-in: ${tracker.consumed}/${tracker.goal} g protein today (${Math.round(
@@ -54,7 +73,11 @@ export function ProteinTrackerScreen() {
             remaining={tracker.remaining}
             streak={tracker.streak}
           />
-          <TrackerActions onRepeatYesterday={tracker.repeatYesterday} onShareProgress={shareProgress} />
+          <TrackerActions
+            onRepeatYesterday={tracker.repeatYesterday}
+            onShareProgress={shareProgress}
+            onVoiceLog={openVoiceLog}
+          />
           <FoodSearchSection
             meal={tracker.meal}
             meals={tracker.meals}
@@ -92,6 +115,18 @@ export function ProteinTrackerScreen() {
         onChangeServing={tracker.setCustomServing}
         onClose={() => tracker.setCustomOpen(false)}
         onSave={tracker.saveCustomFood}
+      />
+      <VoiceLogModal
+        isOpen={voiceOpen}
+        status={voice.status}
+        transcript={voice.transcript}
+        items={voice.items}
+        error={voice.error}
+        onStart={voice.startRecording}
+        onStop={voice.stopAndTranscribe}
+        onRemoveItem={voice.removeItem}
+        onConfirm={confirmVoiceLog}
+        onClose={closeVoiceLog}
       />
     </SafeAreaView>
   );

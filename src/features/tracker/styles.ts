@@ -486,5 +486,57 @@ export const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '900'
+  },
+  voiceMicButton: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#16302b',
+    borderRadius: 99,
+    height: 96,
+    justifyContent: 'center',
+    marginTop: 18,
+    width: 96
+  },
+  voiceMicButtonActive: {
+    backgroundColor: '#bf3c18'
+  },
+  voiceStatusText: {
+    color: '#61746b',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 16,
+    textAlign: 'center'
+  },
+  voiceErrorText: {
+    color: '#9b3322',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 16,
+    textAlign: 'center'
+  },
+  voiceTranscript: {
+    backgroundColor: '#fffaf0',
+    borderColor: '#e4dac8',
+    borderRadius: 16,
+    borderWidth: 1,
+    color: '#3a4a43',
+    fontSize: 15,
+    fontStyle: 'italic',
+    fontWeight: '600',
+    marginTop: 16,
+    padding: 14
+  },
+  voiceItemRemove: {
+    alignItems: 'center',
+    backgroundColor: '#f8ded7',
+    borderRadius: 99,
+    height: 28,
+    justifyContent: 'center',
+    width: 28
+  },
+  voiceItemRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10
   }
 });
